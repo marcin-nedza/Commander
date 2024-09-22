@@ -2,15 +2,10 @@ local M = {}
 
 local commandFilePath = os.getenv("HOME") .. "/.local/share/nvim/test/commands.json"
 
-local function file_exist(path)
-    local stat = vim.fn.filereadable(path)
-    return stat ~= 0
-end
-
 function M.load_user_commands()
-    local file = io.open(commandFile, "r")
+    local file = io.open(commandFilePath, "r")
     if not file then
-        print("Failed to open fil: " .. commandFile)
+        print("Failed to open fil: " .. commandFilePath)
         return
     end
     local content = file:read("*a")
@@ -22,7 +17,7 @@ function M.load_user_commands()
 
     local ok, data = pcall(vim.fn.json_decode, content)
     if not ok then
-        print("Failed to parse JSON from file: " .. commandFile)
+        print("Failed to parse JSON from file: " .. commandFilePath)
     end
 
     local current_dir = vim.fn.getcwd()
@@ -34,7 +29,7 @@ function M.load_user_commands()
     return commands_for_cur_dir
 end
 
-function M.add_command(project_path, command_entry)
+function M.add_command(project_path, command_entry,keybind_entry)
     local file = io.open(commandFilePath, "r")
     local data = { paths = {} } -- Initialize with paths as an empty table
 
@@ -62,7 +57,7 @@ function M.add_command(project_path, command_entry)
     end
 
     -- Add the new command entry
-    table.insert(data.paths[project_path], { command = command_entry, keybind = "" })
+    table.insert(data.paths[project_path], { command = command_entry, keybind = keybind_entry })
 
     -- Write the updated data back to the file
     file = io.open(commandFilePath, "w")
@@ -72,59 +67,5 @@ function M.add_command(project_path, command_entry)
     end
 end
 
-function M.open_input_window()
-    local opts = {
-        relative = "editor",
-        width = 40,
-        height = 5,
-        col = math.floor((vim.o.columns - 40) / 2),
-        row = math.floor((vim.o.lines - 5) / 2),
-        anchor = "NW",
-        style = "minimal",
-        border = "rounded",
-    }
-
-    -- Create a new empty buffer
-    local buf = vim.api.nvim_create_buf(false, true)
-    local win = vim.api.nvim_open_win(buf, true, opts)
-
-    -- Set the buffer to be modifiable and set initial text
-    vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "Enter your command: ", "" })
-
-    vim.api.nvim_win_set_cursor(win, { 2, 0 }) -- Move to the second line
-
-    -- Set up input handling
-    vim.api.nvim_buf_set_keymap(
-        buf,
-        "i",
-        "<Esc>",
-        "<Cmd>lua require('test.file').abort_input(" .. win .. ")<CR>",
-        { noremap = true, silent = true }
-    )
-    vim.api.nvim_buf_set_keymap(
-        buf,
-        "i",
-        "<CR>",
-        "<Cmd>lua require('test.file').handle_input(" .. buf .. "," .. win .. ")<CR>",
-        { noremap = true, silent = true }
-    )
-end
-
-function M.abort_input(win)
-    print("Aborted saving command.")
-    vim.api.nvim_win_close(win, true)
-end
-
-function M.handle_input(buf, win)
-    local lines = vim.api.nvim_buf_get_lines(buf, 1, -1, false) -- Get lines after the prompt
-    local command_string = table.concat(lines, "\n")
-
-    local dirpath = vim.fn.getcwd()
-
-    M.add_command(commandFile, dirpath, command_string)
-    -- Close the window
-    print("Saved command.")
-    vim.api.nvim_win_close(win, true)
-end
 
 return M
