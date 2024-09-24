@@ -67,5 +67,10 @@ function M.add_command(project_path, command_entry,keybind_entry)
     end
 end
 
+function M.get_first_action()
+    local com= M.load_user_commands()
+    print(com[1].command)
+    vim.cmd(com[1].command)
+end
 
 return M

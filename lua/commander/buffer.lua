@@ -1,4 +1,4 @@
-local files = require("test.file")
+local files = require("commander.file")
 local M = {}
 
 local win_id = nil
@@ -76,7 +76,7 @@ function M.open_input_window(prompt, on_submit)
     vim.api.nvim_win_set_cursor(win, { 2, 0 }) -- Move to the second line
 
     -- Set up input handling
-    vim.keymap.set("i", "<esc>", function()
+    vim.keymap.set({ "i", "n" }, "<Esc>", function()
         M.abort_input(win)
     end, { buffer = buf, noremap = true, silent = true })
 

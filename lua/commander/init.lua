@@ -1,8 +1,10 @@
-local buffer=require('test.buffer')
+local buffer=require('commander.buffer')
+local files=require('commander.file')
 
 local M = {}
 function M.setup()
     vim.keymap.set("n", "<Leader>h", buffer.open_floating_window, { noremap = true, silent = true })
     vim.keymap.set("n", "<Leader><Leader>h", buffer.open_input_command_window, { noremap = true, silent = true })
+    vim.keymap.set("n", "<Leader><Leader>j", files.get_first_action, { noremap = true, silent = true })
 end
 return M
