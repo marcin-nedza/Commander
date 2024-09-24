@@ -20,7 +20,7 @@ function M.open_floating_window()
     local content = files.load_user_commands()
     local lines = {}
 
-    if not content then
+    if not content or #content==0 then
         lines = { "No commands found." }
     else
         for _, entry in ipairs(content) do

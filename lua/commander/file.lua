@@ -11,7 +11,7 @@ function M.load_user_commands()
     local content = file:read("*a")
     file:close()
 
-    if not content and #content == 0 then
+    if not content or #content == 0 then
         return nil
     end
 
@@ -29,7 +29,7 @@ function M.load_user_commands()
     return commands_for_cur_dir
 end
 
-function M.add_command(project_path, command_entry,keybind_entry)
+function M.add_command(project_path, command_entry, keybind_entry)
     local file = io.open(commandFilePath, "r")
     local data = { paths = {} } -- Initialize with paths as an empty table
 
@@ -67,8 +67,9 @@ function M.add_command(project_path, command_entry,keybind_entry)
     end
 end
 
+
 function M.get_first_action()
-    local com= M.load_user_commands()
+    local com = M.load_user_commands()
     print(com[1].command)
     vim.cmd(com[1].command)
 end
