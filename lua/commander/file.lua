@@ -114,5 +114,12 @@ function M.delete_command(project_path, keybind)
         print("Failed to open file")
     end
 end
+function M.send_tmux_command(pane,command)
+  -- Construct the tmux send-keys command
+  local tmux_command = "tmux send-keys -t " .. pane .. " '" .. command .. "' C-m"
+    print('com',tmux_command) 
+  -- Execute the command
+  vim.fn.system(tmux_command)
+end
 
 return M

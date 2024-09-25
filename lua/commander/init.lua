@@ -20,14 +20,7 @@ function M.setup(opts)
     utils.initKeybindings(opts.leader_key)
     vim.keymap.set("n", opts.leader_key .. "o", buffer.open_floating_window, { noremap = true, silent = true })
     vim.keymap.set("n", opts.leader_key .. "i", buffer.open_input_command_window, { noremap = true, silent = true })
-    -- vim.keymap.set("n", opts.leader_key .. "r", files.delete_command, { noremap = true, silent = true })
-    vim.api.nvim_buf_set_keymap(0, "n", opts.leader_key .. "r", "", {
-        noremap = true,
-        silent = true,
-        callback = function()
-            files.delete_command(vim.fn.getcwd(),'jjj')
-        end,
-    })
+    vim.keymap.set("n", opts.leader_key .. "k", buffer.show_panes, { noremap = true, silent = true })
 end
 
 return M

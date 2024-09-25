@@ -46,6 +46,15 @@ function M.initKeybindings(leader_key)
         local keybind_leader = leader_key .. keybind
         -- Assign the keybinding
         vim.api.nvim_set_keymap("n", keybind_leader, ":" .. command .. "<CR>", { noremap = true, silent = true })
+        -- vim.api.nvim_buf_set_keymap(0, "n", keybind_leader, "", {
+        --     noremap = true,
+        --     silent = true,
+        --     callback = function ()
+        --         print("---",command)
+        --     files.send_tmux_command(1, command)
+        -- end
+
+        -- })
     end
 end
 

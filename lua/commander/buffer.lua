@@ -171,6 +171,9 @@ function M.open_input_window(title, on_submit)
     end, { buffer = buf, noremap = true, silent = true })
 end
 
+function M.show_panes()
+    vim.fn.system("tmux display-panes -d 2000")
+end
 function M.open_input_command_window()
     M.open_input_window("Enter command", function(input)
         command = input
