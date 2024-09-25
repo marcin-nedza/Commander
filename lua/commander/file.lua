@@ -26,7 +26,7 @@ function M.load_user_commands()
         print("No commands found for current dir.")
         return nil
     end
-    return commands_for_cur_dir
+    return commands_for_cur_dir, current_dir
 end
 
 function M.add_command(project_path, command_entry, keybind_entry)
@@ -67,11 +67,52 @@ function M.add_command(project_path, command_entry, keybind_entry)
     end
 end
 
+function M.delete_command(project_path, keybind)
+    local file = io.open(commandFilePath, "r")
+    local data = { paths = {} }
 
-function M.get_first_action()
-    local com = M.load_user_commands()
-    print(com[1].command)
-    vim.cmd(com[1].command)
+    if file then
+        local content = file:read("*a")
+        file:close()
+
+        if content and #content > 0 then
+            local decoded_data = vim.fn.json_decode(content)
+            if type(decoded_data) == "table" then
+                data = decoded_data
+            end
+        end
+    end
+    if type(data.paths) ~= "table" then
+        print("No paths found.")
+        return
+    end
+    if not data.paths[project_path] then
+        print("Project path not found.")
+        return
+    end
+    local project_command = data.paths[project_path]
+
+    for i, entry in ipairs(project_command) do
+        if entry.keybind == keybind then
+            table.remove(project_command, i)
+            print("Command removed")
+            break
+        end
+    end
+
+    if #project_command then
+        data.paths[project_path] = nil
+    end
+
+    data.paths[project_path] = project_command
+    file = io.open(commandFilePath, "w")
+    if file then
+        file:write(vim.json.encode(data))
+        file:close()
+        print("Update succesfull")
+    else
+        print("Failed to open file")
+    end
 end
 
 return M

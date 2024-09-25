@@ -10,7 +10,6 @@ function M.initDirectories(path)
 
     if vim.fn.isdirectory(dir) == 0 then
         vim.fn.mkdir(dir, "p")
-        print("Initialized directories.")
     else
         print("Failed to initialize directories.")
     end
@@ -19,7 +18,6 @@ function M.initDirectories(path)
 
     if file then
         file:close()
-        print("Initialized file")
     else
         print("Failed to initialize file.")
     end
@@ -46,13 +44,8 @@ function M.initKeybindings(leader_key)
         local keybind = entry.keybind
 
         local keybind_leader = leader_key .. keybind
-        -- Print for debugging purposes
-        print("command: ", command)
-        print("keybind: ", keybind)
-        print("with leader: ", keybind_leader)
-
         -- Assign the keybinding
-        vim.api.nvim_set_keymap("n", leader_key .. keybind, ":" .. command .. "<CR>", { noremap = true, silent = true })
+        vim.api.nvim_set_keymap("n", keybind_leader, ":" .. command .. "<CR>", { noremap = true, silent = true })
     end
 end
 

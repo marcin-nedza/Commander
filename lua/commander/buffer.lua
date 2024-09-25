@@ -17,16 +17,18 @@ local base_opts = {
     border = "double",
     title_pos = "center",
 }
+-- Highlight and move cursor
+local function highlight_line(buf, line)
+    vim.api.nvim_buf_clear_namespace(buf, -1, 0, -1)
+    vim.api.nvim_win_set_cursor(win_id, { line, 0 })
+    vim.api.nvim_buf_add_highlight(buf, -1, "Visual", line - 1, 0, -1)
+end
 
 --- Move the cursor and update highlight
 -- @param buf number: The buffer ID
 -- @param lines table: The lines displayed in the buffer
 -- @param step number: The step to move (positive for down, negative for up)
-function M.move_cursor(buf, lines, step, current_line, content)
-    -- Remove previous highlight
-    vim.api.nvim_buf_clear_namespace(buf, -1, 0, -1)
-    local line_content = string.sub(lines[current_line], 1, 7)
-    -- Move cursor
+function M.move_cursor(buf, lines, step, current_line)
     current_line = current_line + step
     if current_line < 1 then
         current_line = 1
@@ -34,16 +36,8 @@ function M.move_cursor(buf, lines, step, current_line, content)
     if current_line > #lines then
         current_line = #lines
     end
-    -- Update the cursor position and highlight the line
-    vim.api.nvim_win_set_cursor(win_id, { current_line, 0 })
-    vim.api.nvim_buf_add_highlight(buf, -1, "Visual", current_line - 1, 0, -1)
-    vim.api.nvim_buf_set_keymap(buf, "n", "<CR>", "", {
-        noremap = true,
-        silent = true,
-        callback = function()
-            M.select_command(lines, current_line, content)
-        end,
-    })
+    highlight_line(buf, current_line)
+    return current_line -- Return updated current_line
 end
 
 function M.open_floating_window(title)
@@ -52,7 +46,7 @@ function M.open_floating_window(title)
         title = " Commands ",
     })
 
-    local content = files.load_user_commands()
+    local content, curr_dir = files.load_user_commands()
     local lines = {}
     if not content or #content == 0 then
         lines = { "no commands found." }
@@ -69,9 +63,7 @@ function M.open_floating_window(title)
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 
     local current_line = 1
-    vim.api.nvim_win_set_cursor(win_id, { current_line, 0 })
-    vim.api.nvim_buf_add_highlight(buf, -1, "Visual", current_line - 1, 0, -1)
-
+    highlight_line(buf, current_line)
     -- Set up input handling
     vim.keymap.set({ "i", "n" }, "<Esc>", function()
         M.abort_input(win_id)
@@ -81,14 +73,35 @@ function M.open_floating_window(title)
         noremap = true,
         silent = true,
         callback = function()
-            M.move_cursor(buf, lines, 1, current_line, content)
+            current_line = M.move_cursor(buf, lines, 1, current_line)
         end,
     })
     vim.api.nvim_buf_set_keymap(buf, "n", "k", "", {
         noremap = true,
         silent = true,
         callback = function()
-            M.move_cursor(buf, lines, -1, current_line, content)
+            current_line = M.move_cursor(buf, lines, -1, current_line)
+        end,
+    })
+
+    vim.api.nvim_buf_set_keymap(buf, "n", "<CR>", "", {
+        noremap = true,
+        silent = true,
+        callback = function()
+            M.select_command(lines, current_line, content)
+        end,
+    })
+
+    vim.api.nvim_buf_set_keymap(buf, "n", "dd", "", {
+        noremap = true,
+        silent = true,
+        callback = function()
+            local keybind_str = utils.getKeybindByCommand(content, lines[current_line]:match("Command: (.+)"))
+            files.delete_command(curr_dir, keybind_str)
+            content = files.load_user_commands()
+            M.reload_lines(buf, content)
+            current_line = 1
+            highlight_line(buf, current_line)
         end,
     })
 end
@@ -141,7 +154,7 @@ function M.open_input_window(title, on_submit)
     -- Create a new empty buffer
     local buf = vim.api.nvim_create_buf(false, true)
     local win = vim.api.nvim_open_win(buf, true, opts)
-    -- vim.cmd("startinsert")
+    vim.cmd("startinsert")
     -- Set the buffer to be modifiable and set initial text
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "" })
     vim.api.nvim_win_set_cursor(win, { 1, 0 }) -- Move to the second line
@@ -173,6 +186,25 @@ function M.abort_input(win)
     vim.api.nvim_win_close(win, true)
 end
 
+function M.reload_lines(buf, content)
+    -- Reload the user commands from the file
+    content, _ = files.load_user_commands()
+
+    -- Check if there are commands, if so format them, otherwise display no commands
+    local lines = {}
+    if content and #content > 0 then
+        for _, entry in ipairs(content) do
+            local command_display = entry.command or "<none>"
+            table.insert(lines, string.format("Command: %s", command_display))
+        end
+    else
+        lines = { "no commands found." }
+    end
+
+    -- Update the buffer with the new lines
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+end
+
 function M.get_input(buf)
     local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false) -- Get lines after the prompt
     return table.concat(lines, "\n")
@@ -188,7 +220,7 @@ function M.select_command(lines, current_line, content)
     local selected = lines[current_line]
     local command_str = selected:match("Command: (.+)") -- Capture the word after "Command: "
     local keybind_str = utils.getKeybindByCommand(content, command_str)
-    M.open_info_window(command_str, keybind_str) -- Call the function to open a new window with the command text
+    M.open_info_window(command_str, keybind_str)     -- Call the function to open a new window with the command text
 end
 
 return M
