@@ -37,11 +37,11 @@ end
 ---@param command_entry string
 ---@param keybind_entry string
 ---@param pane number|nil
-function M.add_command(project_path, command_entry, keybind_entry,pane)
+function M.add_command(project_path, command_entry, keybind_entry, pane)
     local file = io.open(commandFilePath, "r")
     local data = { paths = {} } -- Initialize with paths as an empty table
     if not pane then
-        pane=0
+        pane = 0
     end
     if file then
         local content = file:read("*a")
@@ -67,8 +67,7 @@ function M.add_command(project_path, command_entry, keybind_entry,pane)
     end
 
     -- Add the new command entry
-    table.insert(data.paths[project_path], { command = command_entry, keybind = keybind_entry,pane=pane})
-
+    table.insert(data.paths[project_path], { command = command_entry, keybind = keybind_entry, pane = pane })
     -- Write the updated data back to the file
     file = io.open(commandFilePath, "w")
     if file then
@@ -77,6 +76,9 @@ function M.add_command(project_path, command_entry, keybind_entry,pane)
     end
 end
 
+---Delete command from list
+---@param project_path string
+---@param keybind string
 function M.delete_command(project_path, keybind)
     local file = io.open(commandFilePath, "r")
     local data = { paths = {} }
@@ -124,11 +126,21 @@ function M.delete_command(project_path, keybind)
         print("Failed to open file")
     end
 end
-function M.send_tmux_command(pane,command)
-  -- Construct the tmux send-keys command
-  local tmux_command = "tmux send-keys -t " .. pane .. " '" .. command .. "' C-m"
-  -- Execute the command
-  vim.fn.system(tmux_command)
+
+---Send command to specified terminal or use neovim cmd
+---@param pane integer
+---@param command string
+function M.send_tmux_command(pane, command)
+    -- Construct the tmux send-keys command
+    local escaped_command = command:gsub("'", "'\\''")
+    local send_command
+    if pane == 0 then
+        send_command =command
+        vim.cmd(send_command)
+    else
+        send_command = "tmux send-keys -t " .. pane .. " '" .. escaped_command .. "' C-m"
+        vim.fn.system(send_command)
+    end
 end
 
 return M

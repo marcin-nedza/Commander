@@ -1,5 +1,4 @@
 local buffer = require("commander.buffer")
-local files = require("commander.file")
 local utils = require("commander.utils")
 
 local commandFilePath = os.getenv("HOME") .. "/.local/share/nvim/test/commands.json"
@@ -11,8 +10,7 @@ local default_opts = {
 local M = {}
 
 --- Setup function for the commander plugin.
--- @param opts table: A table of options.
--- @param opts.leader_key string: The leader key to use (default is "<Leader>").
+--- @param opts table: A table of options.
 function M.setup(opts)
     opts = opts or {}
     opts = vim.tbl_deep_extend("force", default_opts, opts)

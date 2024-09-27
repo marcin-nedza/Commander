@@ -7,7 +7,6 @@ local command = ""
 local keybind = ""
 local pane = nil
 
-
 local base_opts = {
     relative = "editor",
     width = 40,
@@ -24,7 +23,9 @@ function M.show_panes()
     vim.fn.system("tmux display-panes -d 2000")
 end
 
--- Highlight and move cursor
+--- Highlight and move cursor
+---@param buf integer
+---@param line integer
 local function highlight_line(buf, line)
     vim.api.nvim_buf_clear_namespace(buf, -1, 0, -1)
     vim.api.nvim_win_set_cursor(win_id, { line, 0 })
@@ -58,6 +59,10 @@ function M.open_floating_window(title)
     })
 
     local content, curr_dir = files.load_user_commands()
+    if not curr_dir or #curr_dir == 0 then
+        print("Failed to load current dir")
+        return
+    end
     local lines = {}
     if not content or #content == 0 then
         lines = { "no commands found." }
@@ -111,6 +116,10 @@ function M.open_floating_window(title)
                 return
             end
             local keybind_str = utils.getKeybindByCommand(content, lines[current_line]:match("Command: (.+)"))
+            if not keybind_str or #keybind_str == 0 then
+                print("Failed to get keybind")
+                return
+            end
             files.delete_command(curr_dir, keybind_str)
             content = files.load_user_commands()
             M.reload_lines(buf, content)
@@ -188,16 +197,6 @@ function M.open_input_window(title, on_submit)
     end, { buffer = buf, noremap = true, silent = true })
 end
 
--- function M.open_input_command_window()
---     M.open_input_window("Enter command", function(input)
---         command = input
---         M.open_input_window("Enter keybind", function(input)
---             keybind = input
---             M.handle_input()
---         end)
---     end)
--- end
-
 function M.open_input_command_window()
     -- Prompt for the command input
     command = vim.fn.input({ prompt = "Enter command: " })
@@ -221,9 +220,10 @@ function M.open_input_command_window()
     if add_pane:lower() == "y" then
         pane = vim.fn.input({ prompt = "Enter tmux pane number: " })
 
+        pane = tonumber(pane)
         M.show_panes()
-        -- Validate the pane input (e.g., ensure it's a number)
-        if tonumber(pane) == nil then
+        -- Validate the pane input
+        if pane == nil then
             print("Invalid pane number. Aborting.")
             return
         end

@@ -42,30 +42,23 @@ end
 function M.initKeybindings(leader_key)
     local content = files.load_user_commands()
     if not content or #content == 0 then
-        print("No commands found. No keybindings were set.")
         return
     end
 
     for _, entry in ipairs(content) do
         local command = entry.command
         local keybind = entry.keybind
-        local pane = entry.pane
+        local pane
+        if not entry.pane then
+            pane = 0
+        else
+            pane = entry.pane
+        end
 
         local keybind_leader = leader_key .. keybind
-        local curr_buff = vim.api.nvim_get_current_buf()
-        print("CURR BUFF", curr_buff)
-        -- Assign the keybinding
-        -- vim.api.nvim_set_keymap("n", keybind_leader, ":" .. command .. "<CR>", { noremap = true, silent = true })
-        -- vim.api.nvim_buf_set_keymap(curr_buff, "n", keybind_leader, "", {
-        --     noremap = true,
-        --     silent = true,
-        --     callback = function()
-        --         files.send_tmux_command(tonumber(pane), command)
-        --     end,
-        -- })
 
         vim.keymap.set("n", keybind_leader, function()
-            files.send_tmux_command(tonumber(pane), command)
+            files.send_tmux_command(pane, command)
         end, {
             noremap = true,
             silent = true,
