@@ -2,6 +2,9 @@ local M = {}
 
 local commandFilePath = os.getenv("HOME") .. "/.local/share/nvim/test/commands.json"
 
+---Load user commands from file.
+---@return table|nil
+---@return string|nil
 function M.load_user_commands()
     local file = io.open(commandFilePath, "r")
     if not file then
@@ -29,10 +32,17 @@ function M.load_user_commands()
     return commands_for_cur_dir, current_dir
 end
 
-function M.add_command(project_path, command_entry, keybind_entry)
+--- Add command to a file
+---@param project_path string
+---@param command_entry string
+---@param keybind_entry string
+---@param pane number|nil
+function M.add_command(project_path, command_entry, keybind_entry,pane)
     local file = io.open(commandFilePath, "r")
     local data = { paths = {} } -- Initialize with paths as an empty table
-
+    if not pane then
+        pane=0
+    end
     if file then
         local content = file:read("*a")
         file:close()
@@ -57,7 +67,7 @@ function M.add_command(project_path, command_entry, keybind_entry)
     end
 
     -- Add the new command entry
-    table.insert(data.paths[project_path], { command = command_entry, keybind = keybind_entry })
+    table.insert(data.paths[project_path], { command = command_entry, keybind = keybind_entry,pane=pane})
 
     -- Write the updated data back to the file
     file = io.open(commandFilePath, "w")
@@ -117,7 +127,6 @@ end
 function M.send_tmux_command(pane,command)
   -- Construct the tmux send-keys command
   local tmux_command = "tmux send-keys -t " .. pane .. " '" .. command .. "' C-m"
-    print('com',tmux_command) 
   -- Execute the command
   vim.fn.system(tmux_command)
 end

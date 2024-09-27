@@ -23,7 +23,14 @@ function M.initDirectories(path)
     end
 end
 
+---Get keybind from a file
+---@param tbl table
+---@param searchCommand string
+---@return string|nil
 function M.getKeybindByCommand(tbl, searchCommand)
+    if not tbl or #tbl == 0 then
+        return nil
+    end
     for _, entry in ipairs(tbl) do
         if entry.command == searchCommand then
             return entry.keybind -- Return the keybind if command matches
@@ -42,19 +49,27 @@ function M.initKeybindings(leader_key)
     for _, entry in ipairs(content) do
         local command = entry.command
         local keybind = entry.keybind
+        local pane = entry.pane
 
         local keybind_leader = leader_key .. keybind
+        local curr_buff = vim.api.nvim_get_current_buf()
+        print("CURR BUFF", curr_buff)
         -- Assign the keybinding
-        vim.api.nvim_set_keymap("n", keybind_leader, ":" .. command .. "<CR>", { noremap = true, silent = true })
-        -- vim.api.nvim_buf_set_keymap(0, "n", keybind_leader, "", {
+        -- vim.api.nvim_set_keymap("n", keybind_leader, ":" .. command .. "<CR>", { noremap = true, silent = true })
+        -- vim.api.nvim_buf_set_keymap(curr_buff, "n", keybind_leader, "", {
         --     noremap = true,
         --     silent = true,
-        --     callback = function ()
-        --         print("---",command)
-        --     files.send_tmux_command(1, command)
-        -- end
-
+        --     callback = function()
+        --         files.send_tmux_command(tonumber(pane), command)
+        --     end,
         -- })
+
+        vim.keymap.set("n", keybind_leader, function()
+            files.send_tmux_command(tonumber(pane), command)
+        end, {
+            noremap = true,
+            silent = true,
+        })
     end
 end
 

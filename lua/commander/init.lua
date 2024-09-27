@@ -9,6 +9,7 @@ local default_opts = {
 }
 
 local M = {}
+
 --- Setup function for the commander plugin.
 -- @param opts table: A table of options.
 -- @param opts.leader_key string: The leader key to use (default is "<Leader>").
