@@ -76,6 +76,75 @@ function M.add_command(project_path, command_entry, keybind_entry, pane)
     end
 end
 
+---Update command in the file
+---@param project_path string
+---@param command_entry string
+---@param keybind_entry string
+---@param new_command string|nil
+---@param new_keybind string|nil
+---@param new_pane number|nil
+function M.update_command(project_path, command_entry, keybind_entry, new_command, new_keybind, new_pane)
+    local file = io.open(commandFilePath, "r")
+    local data = { paths = {} }
+
+    if file then
+        local content = file:read("*a")
+        file:close()
+
+        if content and #content > 0 then
+            local decoded_data = vim.fn.json_decode(content)
+            if type(decoded_data) == "table" then
+                data = decoded_data
+            end
+        end
+    end
+
+    if type(data.paths) ~= "table" then
+        print("No paths found.")
+        return
+    end
+
+    if not data.paths[project_path] then
+        print("Project path not found.")
+        return
+    end
+
+    local project_command = data.paths[project_path]
+    local command_found = false
+
+    -- Find the command and keybind
+    for i, entry in ipairs(project_command) do
+        if entry.command == command_entry and entry.keybind == keybind_entry then
+            -- Update the fields if new values are provided
+            if new_command then
+                entry.command = new_command
+            end
+            if new_keybind then
+                entry.keybind = new_keybind
+            end
+            if new_pane then
+                entry.pane = new_pane
+            end
+            command_found = true
+            break
+        end
+    end
+
+    if not command_found then
+        print("Command with specified keybind not found.")
+        return
+    end
+
+    -- Write the updated data back to the file
+    file = io.open(commandFilePath, "w")
+    if file then
+        file:write(vim.fn.json_encode(data))
+        file:close()
+        print("Command updated successfully.")
+    else
+        print("Failed to open file for writing.")
+    end
+end
 ---Delete command from list
 ---@param project_path string
 ---@param keybind string

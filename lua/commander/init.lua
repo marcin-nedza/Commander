@@ -8,15 +8,15 @@ local default_opts = {
 }
 
 local M = {}
-
 --- Setup function for the commander plugin.
 --- @param opts table: A table of options.
 function M.setup(opts)
     opts = opts or {}
     opts = vim.tbl_deep_extend("force", default_opts, opts)
 
+    utils.set_options(opts)
     utils.initDirectories(commandFilePath)
-    utils.initKeybindings(opts.leader_key)
+    utils.initKeybindings()
     vim.keymap.set("n", opts.leader_key .. "o", buffer.open_floating_window, { noremap = true, silent = true })
     vim.keymap.set("n", opts.leader_key .. "i", buffer.open_input_command_window, { noremap = true, silent = true })
     vim.keymap.set("n", opts.leader_key .. "k", buffer.show_panes, { noremap = true, silent = true })

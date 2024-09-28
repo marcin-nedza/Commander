@@ -59,10 +59,6 @@ function M.open_floating_window(title)
     })
 
     local content, curr_dir = files.load_user_commands()
-    if not curr_dir or #curr_dir == 0 then
-        print("Failed to load current dir")
-        return
-    end
     local lines = {}
     if not content or #content == 0 then
         lines = { "no commands found." }
@@ -120,9 +116,24 @@ function M.open_floating_window(title)
                 print("Failed to get keybind")
                 return
             end
+            if not curr_dir or #curr_dir == 0 then
+                return
+            end
             files.delete_command(curr_dir, keybind_str)
             content = files.load_user_commands()
             M.reload_lines(buf, content)
+            current_line = 1
+            highlight_line(buf, current_line)
+        end,
+    })
+    vim.api.nvim_buf_set_keymap(buf, "n", "e", "", {
+        noremap = true,
+        silent = true,
+        callback = function()
+            if not content or #content == 0 then
+                return
+            end
+            M.edit_command(lines, current_line, content)
             current_line = 1
             highlight_line(buf, current_line)
         end,
@@ -264,6 +275,7 @@ end
 function M.handle_input()
     local dirpath = vim.fn.getcwd()
     files.add_command(dirpath, command, keybind, pane)
+    utils.initKeybindings()
     print("Saved command.")
 end
 
@@ -276,6 +288,19 @@ function M.select_command(lines, current_line, content)
         return
     end
     M.open_info_window(command_str, keybind_str) -- Call the function to open a new window with the command text
+end
+
+function M.edit_command(lines, current_line, content)
+    local dirpath = vim.fn.getcwd()
+    local selected = lines[current_line]
+    local command_str = selected:match("Command: (.+)") -- Capture the word after "Command: "
+    local keybind_str, pane_res = utils.getKeybindByCommand(content, command_str)
+    command = vim.fn.input({ prompt = "Enter command: ", default = command_str })
+    keybind = vim.fn.input({ prompt = "Enter keybind: ", default = keybind_str })
+    pane = vim.fn.input({ prompt = "Enter target pane: ", default = pane_res })
+    if #command > 0 and #keybind > 0 then
+        files.update_command(dirpath, command_str, keybind_str, command, keybind, pane)
+    end
 end
 
 return M
