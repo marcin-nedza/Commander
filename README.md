@@ -15,6 +15,13 @@
 
 ---
 
+## ⚙️ Example Usage
+
+https://github.com/user-attachments/assets/5bf3cfc8-1dde-426b-aef2-943ded647e0a
+
+
+
+---
 ## 📦 Installation
 
 Using **lazy.nvim**:
@@ -28,6 +35,8 @@ Using **lazy.nvim**:
 }
 ```
 Or with **packer.nvim**:
+
+
 
 ```lua
 use {
@@ -71,7 +80,6 @@ The format supports **project-specific** commands. Here's an example:
 - `command`: The shell command to send.
 
 > Each path corresponds to a project directory. When you're working inside that directory, Commander loads the appropriate bindings.
-
 
 ## ⚙️ Customizing the Leader Key for plugin
 
