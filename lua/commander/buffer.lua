@@ -38,11 +38,8 @@ end
 ---@param buf integer
 ---@param line integer
 local function highlight_line(buf, line)
-    print("BUF AND win_id"..buf.."  id"..win_id)
     vim.api.nvim_buf_clear_namespace(buf, -1, 0, -1)
-    print("1")
     num=vim.api.nvim_get_current_win()
-    print(num)
 
     vim.api.nvim_win_set_cursor(win_id, { line, 0 })
     vim.api.nvim_buf_add_highlight(buf, -1, "Visual", line - 1, 0, -1)

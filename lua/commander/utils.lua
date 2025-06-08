@@ -32,27 +32,7 @@ function M.initCommandFile(dir, fileName)
         print("Failed to initialize file: " .. path)
     end
 end
--- function M.initDirectories(path)
---     local dir = vim.fn.fnamemodify(path, ":h")
---
---     if vim.fn.isdirectory(dir) and vim.fn.filereadable(path) == 1 then
---         return
---     end
---
---     if vim.fn.isdirectory(dir) == 0 then
---         vim.fn.mkdir(dir, "p")
---     else
---         print("Failed to initialize directories.")
---     end
---
---     local file = io.open(path, "w")
---
---     if file then
---         file:close()
---     else
---         print("Failed to initialize file.")
---     end
--- end
+
 
 ---Get keybind from a file
 ---@param tbl table
