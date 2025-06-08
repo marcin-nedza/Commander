@@ -1,6 +1,6 @@
 local M = {}
 
-local commandFilePath = os.getenv("HOME") .. "/.local/share/nvim/test/commands.json"
+local commandFilePath = os.getenv("HOME") .. "/.local/share/nvim/commander.json"
 
 ---Load user commands from file.
 ---@return table|nil

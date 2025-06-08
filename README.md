@@ -48,8 +48,11 @@ use {
 ```
 ## ⚙️ Configuration
 
-Commander.nvim stores keybindings and commands in a JSON file at:
-~/.local/share/nvim/test/commands.json
+Commander.nvim stores by default keybindings and commands in a JSON file at:
+~/.local/share/nvim/commander.json
+
+This can be changed in config file.
+
 The format supports **project-specific** commands. Here's an example:
 
 ````json
@@ -81,15 +84,21 @@ The format supports **project-specific** commands. Here's an example:
 
 > Each path corresponds to a project directory. When you're working inside that directory, Commander loads the appropriate bindings.
 
-## ⚙️ Customizing the Leader Key for plugin
+## ⚙️ Setup options
 
 By default, Commander.nvim uses `<C-s>` (Control + s) as the leader key for all command keybindings.
 
-You can customize the leader key by passing an option when setting up the plugin:
+You can customize the leader key and other configurations by passing an option when setting up the plugin:
 
 ```lua
 require("commander").setup({
-    leader_key = "<C-w>" -- Replace with your preferred leader key
+
+    command_file_path = "path/to/.local/share/nvim",                -- Default location
+    file_name = "commander.json",                                   -- Default file name
+    leader_key = "<C-s>",                                           -- Default leader key
+    open_list = "o",                                                -- Default key to open list of commands
+    insert_new = "i",                                               -- Default key to insert new command
+    show_panes = "k",                                               -- Default key to show pane numbers
 })
 ```
 ### Default keybindings:

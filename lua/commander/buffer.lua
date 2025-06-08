@@ -7,6 +7,16 @@ local command = ""
 local keybind = ""
 local pane = nil
 
+local rounded_border = {
+    { "╭", "FloatBorder" }, -- Top-left corner
+    { "─", "FloatBorder" }, -- Top border
+    { "╮", "FloatBorder" }, -- Top-right corner
+    { "│", "FloatBorder" }, -- Right border
+    { "╯", "FloatBorder" }, -- Bottom-right corner
+    { "─", "FloatBorder" }, -- Bottom border
+    { "╰", "FloatBorder" }, -- Bottom-left corner
+    { "│", "FloatBorder" }, -- Left border
+}
 local base_opts = {
     relative = "editor",
     width = 40,
@@ -15,7 +25,8 @@ local base_opts = {
     row = math.floor((vim.o.lines - 5) / 2),
     anchor = "NW",
     style = "minimal",
-    border = "double",
+    -- border = "single",
+    border = rounded_border,
     title_pos = "center",
 }
 
@@ -27,7 +38,12 @@ end
 ---@param buf integer
 ---@param line integer
 local function highlight_line(buf, line)
+    print("BUF AND win_id"..buf.."  id"..win_id)
     vim.api.nvim_buf_clear_namespace(buf, -1, 0, -1)
+    print("1")
+    num=vim.api.nvim_get_current_win()
+    print(num)
+
     vim.api.nvim_win_set_cursor(win_id, { line, 0 })
     vim.api.nvim_buf_add_highlight(buf, -1, "Visual", line - 1, 0, -1)
 end
@@ -159,6 +175,7 @@ function M.open_info_window(command_text, keybind_text)
         "Selected Command: " .. command_text,
         "Keybind: " .. keybind_text,
     }
+    vim.api.nvim_buf_set_option(buf, "wrap", true)
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 
     -- Close the window and go back to the previous one when pressing <Esc>
@@ -166,10 +183,10 @@ function M.open_info_window(command_text, keybind_text)
         noremap = true,
         silent = true,
         callback = function()
-            vim.api.nvim_win_close(win_id, true) -- Close the current window
-            win_id = prev_win_id         -- Set win_id back to the previous window
+            vim.api.nvim_win_close(win_id, true)     -- Close the current window
+            win_id = prev_win_id                     -- Set win_id back to the previous window
             if win_id then
-                vim.api.nvim_set_current_win(win_id) -- Return focus to the previous window
+                vim.api.nvim_set_current_win(prev_win_id) -- Return focus to the previous window
             end
         end,
     })
@@ -183,34 +200,10 @@ function M.close_floating_window()
     end
 end
 
-function M.open_input_window(title, on_submit)
-    local opts = vim.tbl_extend("force", base_opts, {
-        title = title,
-    })
-
-    -- Create a new empty buffer
-    local buf = vim.api.nvim_create_buf(false, true)
-    local win = vim.api.nvim_open_win(buf, true, opts)
-    vim.cmd("startinsert")
-    -- Set the buffer to be modifiable and set initial text
-    vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "" })
-    vim.api.nvim_win_set_cursor(win, { 1, 0 }) -- Move to the second line
-
-    -- Set up input handling
-    vim.keymap.set({ "i", "n" }, "<Esc>", function()
-        M.abort_input(win)
-    end, { buffer = buf, noremap = true, silent = true })
-
-    vim.keymap.set("i", "<cr>", function()
-        local input = M.get_input(buf)
-        on_submit(input) -- Call the provided callback with the input
-        vim.api.nvim_win_close(win, true)
-    end, { buffer = buf, noremap = true, silent = true })
-end
-
 function M.open_input_command_window()
     -- Prompt for the command input
     command = vim.fn.input({ prompt = "Enter command: " })
+
     -- Check if the command is empty
     if command == "" then
         print("No command entered. Aborting.")
@@ -230,9 +223,9 @@ function M.open_input_command_window()
     -- If user answers "Y", prompt for the pane number
     if add_pane:lower() == "y" then
         pane = vim.fn.input({ prompt = "Enter tmux pane number: " })
+        M.show_panes()
 
         pane = tonumber(pane)
-        M.show_panes()
         -- Validate the pane input
         if pane == nil then
             print("Invalid pane number. Aborting.")

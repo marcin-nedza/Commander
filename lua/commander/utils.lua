@@ -8,27 +8,51 @@ function M.set_options(opt)
         options=opt
     }
 end
-function M.initDirectories(path)
-    local dir = vim.fn.fnamemodify(path, ":h")
 
-    if vim.fn.isdirectory(dir) and vim.fn.filereadable(path) == 1 then
-        return
-    end
-
+function M.initDirectories(dir)
     if vim.fn.isdirectory(dir) == 0 then
         vim.fn.mkdir(dir, "p")
-    else
-        print("Failed to initialize directories.")
+    end
+end
+function M.initCommandFile(dir, fileName)
+    local path = dir .. "/" .. fileName
+
+    -- Check if file already exists
+    local existing = io.open(path, "r")
+    if existing then
+        existing:close()
+        return -- Do nothing if file exists
     end
 
+    -- File does not exist, create it
     local file = io.open(path, "w")
-
     if file then
         file:close()
     else
-        print("Failed to initialize file.")
+        print("Failed to initialize file: " .. path)
     end
 end
+-- function M.initDirectories(path)
+--     local dir = vim.fn.fnamemodify(path, ":h")
+--
+--     if vim.fn.isdirectory(dir) and vim.fn.filereadable(path) == 1 then
+--         return
+--     end
+--
+--     if vim.fn.isdirectory(dir) == 0 then
+--         vim.fn.mkdir(dir, "p")
+--     else
+--         print("Failed to initialize directories.")
+--     end
+--
+--     local file = io.open(path, "w")
+--
+--     if file then
+--         file:close()
+--     else
+--         print("Failed to initialize file.")
+--     end
+-- end
 
 ---Get keybind from a file
 ---@param tbl table
