@@ -37,7 +37,8 @@ end
 ---@param command_entry string
 ---@param keybind_entry string
 ---@param pane number|nil
-function M.add_command(project_path, command_entry, keybind_entry, pane)
+---@param win string|nil
+function M.add_command(project_path, command_entry, keybind_entry, pane,win)
     local file = io.open(commandFilePath, "r")
     local data = { paths = {} } -- Initialize with paths as an empty table
     if not pane then
@@ -67,7 +68,7 @@ function M.add_command(project_path, command_entry, keybind_entry, pane)
     end
 
     -- Add the new command entry
-    table.insert(data.paths[project_path], { command = command_entry, keybind = keybind_entry, pane = pane })
+    table.insert(data.paths[project_path], { command = command_entry, keybind = keybind_entry, pane = pane,win=win })
     -- Write the updated data back to the file
     file = io.open(commandFilePath, "w")
     if file then
@@ -145,6 +146,7 @@ function M.update_command(project_path, command_entry, keybind_entry, new_comman
         print("Failed to open file for writing.")
     end
 end
+
 ---Delete command from list
 ---@param project_path string
 ---@param keybind string
@@ -199,15 +201,23 @@ end
 ---Send command to specified terminal or use neovim cmd
 ---@param pane integer
 ---@param command string
-function M.send_tmux_command(pane, command)
+---@param win? integer
+function M.send_tmux_command(pane, command, win)
     -- Construct the tmux send-keys command
+    local target = tostring(pane)
+    if win ~= nil then
+        target = tostring(win) .. "." .. tostring(pane)
+    end
+
+    -- Escape the command
     local escaped_command = command:gsub("'", "'\\''")
+
     local send_command
     if pane == 0 then
-        send_command =command
+        send_command = command
         vim.cmd(send_command)
     else
-        send_command = "tmux send-keys -t " .. pane .. " '" .. escaped_command .. "' C-m"
+        send_command = "tmux send-keys -t " .. target .. " '" .. escaped_command .. "' C-m"
         vim.fn.system(send_command)
     end
 end

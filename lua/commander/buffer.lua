@@ -6,6 +6,7 @@ local win_id
 local command = ""
 local keybind = ""
 local pane = nil
+local win = nil
 
 local rounded_border = {
     { "╭", "FloatBorder" }, -- Top-left corner
@@ -208,13 +209,18 @@ function M.open_input_command_window()
     end
 
     -- Prompt for the keybind input
-    keybind = vim.fn.input({ prompt = "Enter keybind: " })
+    keybind = vim.fn.input({ prompt = "Enter keybind222: " })
 
     -- Check if the keybind is empty
     if keybind == "" then
         print("No keybind entered. Aborting.")
         return
     end
+    local add_win = vim.fn.input({ prompt = "Target tmux window? Y/N: " })
+    if add_win:lower()=="y"then
+        win= vim.fn.input({ prompt = "Enter tmux window name/number: " })
+    end
+
     local add_pane = vim.fn.input({ prompt = "Target tmux pane? Y/N: " })
 
     -- If user answers "Y", prompt for the pane number
@@ -264,7 +270,7 @@ end
 
 function M.handle_input()
     local dirpath = vim.fn.getcwd()
-    files.add_command(dirpath, command, keybind, pane)
+    files.add_command(dirpath, command, keybind, pane,win)
     utils.initKeybindings()
     print("Saved command.")
 end
