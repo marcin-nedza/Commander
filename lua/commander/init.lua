@@ -1,10 +1,10 @@
 local buffer = require("commander.buffer")
 local utils = require("commander.utils")
+local file = require("commander.file")
 
 ---@class CommanderOptions
 ---@field command_file_path string
 ---@field file_name string
----@field commandFilePath string
 ---@field leader_key string
 ---@field open_list string
 ---@field insert_new string
@@ -26,7 +26,8 @@ function M.setup(opts)
     opts = opts or {}
     opts = vim.tbl_deep_extend("force", default_opts, opts or {})
 
-    utils.set_options(opts)
+    file.set_options(opts)
+    -- utils.set_options(opts)
     utils.initDirectories(opts.command_file_path)
     utils.initCommandFile(opts.command_file_path, opts.file_name)
     utils.initKeybindings()

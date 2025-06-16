@@ -6,6 +6,7 @@ local win_id
 local command = ""
 local keybind = ""
 local pane = nil
+local win = nil
 
 local rounded_border = {
     { "╭", "FloatBorder" }, -- Top-left corner
@@ -126,7 +127,7 @@ function M.open_floating_window(title)
             end
             local keybind_str = utils.getKeybindByCommand(content, lines[current_line]:match("Command: (.+)"))
             if not keybind_str or #keybind_str == 0 then
-                print("Failed to get keybind")
+                print("[Commander]: Failed to get keybind")
                 return
             end
             if not curr_dir or #curr_dir == 0 then
@@ -203,7 +204,7 @@ function M.open_input_command_window()
 
     -- Check if the command is empty
     if command == "" then
-        print("No command entered. Aborting.")
+        print("[Commander]: No command entered. Aborting.")
         return
     end
 
@@ -212,9 +213,14 @@ function M.open_input_command_window()
 
     -- Check if the keybind is empty
     if keybind == "" then
-        print("No keybind entered. Aborting.")
+        print("[Commander]: No keybind entered. Aborting.")
         return
     end
+    local add_win = vim.fn.input({ prompt = "Target tmux window? Y/N: " })
+    if add_win:lower()=="y"then
+        win= vim.fn.input({ prompt = "Enter tmux window name/number: " })
+    end
+
     local add_pane = vim.fn.input({ prompt = "Target tmux pane? Y/N: " })
 
     -- If user answers "Y", prompt for the pane number
@@ -225,7 +231,7 @@ function M.open_input_command_window()
         pane = tonumber(pane)
         -- Validate the pane input
         if pane == nil then
-            print("Invalid pane number. Aborting.")
+            print("[Commander]: Invalid pane number. Aborting.")
             return
         end
     end
@@ -234,7 +240,7 @@ function M.open_input_command_window()
 end
 
 function M.abort_input(win)
-    print("Aborted saving command.")
+    print("[Commander]: Aborted saving command.")
     vim.api.nvim_win_close(win, true)
 end
 
@@ -264,9 +270,9 @@ end
 
 function M.handle_input()
     local dirpath = vim.fn.getcwd()
-    files.add_command(dirpath, command, keybind, pane)
+    files.add_command(dirpath, command, keybind, pane,win)
     utils.initKeybindings()
-    print("Saved command.")
+    print("[Commander]: Saved command.")
 end
 
 function M.select_command(lines, current_line, content)
@@ -274,7 +280,7 @@ function M.select_command(lines, current_line, content)
     local command_str = selected:match("Command: (.+)") -- Capture the word after "Command: "
     local keybind_str = utils.getKeybindByCommand(content, command_str)
     if not keybind_str or #keybind_str == 0 then
-        print("No keybind found.")
+        print("[Commander]: No keybind found.")
         return
     end
     M.open_info_window(command_str, keybind_str) -- Call the function to open a new window with the command text

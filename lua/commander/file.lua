@@ -1,79 +1,96 @@
 local M = {}
 
-local commandFilePath = os.getenv("HOME") .. "/.local/share/nvim/commander.json"
+local path = nil
 
----Load user commands from file.
----@return table|nil
----@return string|nil
-function M.load_user_commands()
-    local file = io.open(commandFilePath, "r")
+-- Get config file path
+local function get_path()
+    if path then return path end
+    if not M.table or not M.table.options then return nil end
+    path = M.table.options.command_file_path .. "/" .. M.table.options.file_name
+    return path
+end
+
+---Set options
+---@param opt CommanderOptions
+function M.set_options(opt)
+    M.table = {
+        options = opt
+    }
+end
+
+-- Utility to write data back to file
+local function write_data(data)
+    local file_path = get_path()
+    if not file_path then return end
+
+    local file = io.open(file_path, "w")
     if not file then
-        print("Failed to open fil: " .. commandFilePath)
+        print("[Commander]: Failed to open file for writing.")
         return
     end
+    file:write(vim.fn.json_encode(data))
+    file:close()
+end
+
+-- Utility to read and parse the JSON data
+local function read_data()
+    local file_path = get_path()
+    if not file_path then return nil end
+
+    local file = io.open(file_path, "r")
+    if not file then return { paths = {} } end
+
     local content = file:read("*a")
     file:close()
 
-    if not content or #content == 0 then
-        return nil
-    end
+    if not content or #content == 0 then return { paths = {} } end
 
     local ok, data = pcall(vim.fn.json_decode, content)
-    if not ok then
-        print("Failed to parse JSON from file: " .. commandFilePath)
+    if not ok or type(data) ~= "table" then
+        print("[Commander]: Failed to parse JSON.")
+        return { paths = {} }
     end
 
-    local current_dir = vim.fn.getcwd()
-    local commands_for_cur_dir = data.paths[current_dir]
-    if not commands_for_cur_dir then
-        print("No commands found for current dir.")
-        return nil
-    end
-    return commands_for_cur_dir, current_dir
-end
-
---- Add command to a file
----@param project_path string
----@param command_entry string
----@param keybind_entry string
----@param pane number|nil
-function M.add_command(project_path, command_entry, keybind_entry, pane)
-    local file = io.open(commandFilePath, "r")
-    local data = { paths = {} } -- Initialize with paths as an empty table
-    if not pane then
-        pane = 0
-    end
-    if file then
-        local content = file:read("*a")
-        file:close()
-
-        if content and #content > 0 then
-            -- Attempt to decode the content
-            local decoded_data = vim.fn.json_decode(content)
-            if type(decoded_data) == "table" then
-                data = decoded_data
-            end
-        end
-    end
-
-    -- Ensure the 'paths' field is initialized as a table
     if type(data.paths) ~= "table" then
         data.paths = {}
     end
 
-    -- Ensure the specific project path is initialized
-    if not data.paths[project_path] then
-        data.paths[project_path] = {} -- Initialize as an array if it doesn't exist
+    return data
+end
+
+-- Load user commands for current directory
+---@return table|nil, string|nil
+function M.load_user_commands()
+    local data = read_data()
+    if not data then return end
+
+    local current_dir = vim.fn.getcwd()
+    local commands = data.paths[current_dir]
+
+    if not commands then
+        print("[Commander]: No commands found for current dir.")
+        return nil
     end
 
-    -- Add the new command entry
-    table.insert(data.paths[project_path], { command = command_entry, keybind = keybind_entry, pane = pane })
-    -- Write the updated data back to the file
-    file = io.open(commandFilePath, "w")
-    if file then
-        file:write(vim.fn.json_encode(data))
-        file:close()
-    end
+    return commands, current_dir
+end
+
+-- Add command to a project path
+---@param project_path string
+---@param command_entry string
+---@param keybind_entry string
+---@param pane number|nil
+---@param win string|nil
+function M.add_command(project_path, command_entry, keybind_entry, pane, win)
+    local data = read_data()
+    data.paths[project_path] = data.paths[project_path] or {}
+    table.insert(data.paths[project_path], {
+        command = command_entry,
+        keybind = keybind_entry,
+        pane = pane or 0,
+        win = win
+    })
+    write_data(data)
 end
 
 ---Update command in the file
@@ -84,130 +101,70 @@ end
 ---@param new_keybind string|nil
 ---@param new_pane number|nil
 function M.update_command(project_path, command_entry, keybind_entry, new_command, new_keybind, new_pane)
-    local file = io.open(commandFilePath, "r")
-    local data = { paths = {} }
+    local data = read_data()
+    local project_cmds = data.paths[project_path]
 
-    if file then
-        local content = file:read("*a")
-        file:close()
-
-        if content and #content > 0 then
-            local decoded_data = vim.fn.json_decode(content)
-            if type(decoded_data) == "table" then
-                data = decoded_data
-            end
-        end
-    end
-
-    if type(data.paths) ~= "table" then
-        print("No paths found.")
+    if not project_cmds then
+        print("[Commander]: Project path not found.")
         return
     end
 
-    if not data.paths[project_path] then
-        print("Project path not found.")
-        return
-    end
-
-    local project_command = data.paths[project_path]
-    local command_found = false
-
-    -- Find the command and keybind
-    for i, entry in ipairs(project_command) do
+    for _, entry in ipairs(project_cmds) do
         if entry.command == command_entry and entry.keybind == keybind_entry then
-            -- Update the fields if new values are provided
-            if new_command then
-                entry.command = new_command
-            end
-            if new_keybind then
-                entry.keybind = new_keybind
-            end
-            if new_pane then
-                entry.pane = new_pane
-            end
-            command_found = true
-            break
+            if new_command then entry.command = new_command end
+            if new_keybind then entry.keybind = new_keybind end
+            if new_pane then entry.pane = new_pane end
+            write_data(data)
+            print("[Commander]: Command updated successfully.")
+            return
         end
     end
 
-    if not command_found then
-        print("Command with specified keybind not found.")
-        return
-    end
-
-    -- Write the updated data back to the file
-    file = io.open(commandFilePath, "w")
-    if file then
-        file:write(vim.fn.json_encode(data))
-        file:close()
-        print("Command updated successfully.")
-    else
-        print("Failed to open file for writing.")
-    end
+    print("[Commander]: Command with specified keybind not found.")
 end
+
 ---Delete command from list
 ---@param project_path string
 ---@param keybind string
 function M.delete_command(project_path, keybind)
-    local file = io.open(commandFilePath, "r")
-    local data = { paths = {} }
+    local data = read_data()
+    local project_cmds = data.paths[project_path]
 
-    if file then
-        local content = file:read("*a")
-        file:close()
-
-        if content and #content > 0 then
-            local decoded_data = vim.fn.json_decode(content)
-            if type(decoded_data) == "table" then
-                data = decoded_data
-            end
-        end
-    end
-    if type(data.paths) ~= "table" then
-        print("No paths found.")
+    if not project_cmds then
+        print("[Commander]: Project path not found.")
         return
     end
-    if not data.paths[project_path] then
-        print("Project path not found.")
-        return
-    end
-    local project_command = data.paths[project_path]
 
-    for i, entry in ipairs(project_command) do
+    for i, entry in ipairs(project_cmds) do
         if entry.keybind == keybind then
-            table.remove(project_command, i)
-            print("Command removed")
+            table.remove(project_cmds, i)
+            print("[Commander]: Command removed.")
             break
         end
     end
 
-    if #project_command then
+    if #project_cmds == 0 then
         data.paths[project_path] = nil
     end
 
-    data.paths[project_path] = project_command
-    file = io.open(commandFilePath, "w")
-    if file then
-        file:write(vim.json.encode(data))
-        file:close()
-        print("Update succesfull")
-    else
-        print("Failed to open file")
-    end
+    write_data(data)
 end
 
 ---Send command to specified terminal or use neovim cmd
 ---@param pane integer
 ---@param command string
-function M.send_tmux_command(pane, command)
-    -- Construct the tmux send-keys command
+---@param win integer
+function M.send_tmux_command(pane, command, win)
+    local target = tostring(pane)
+    if win then target = tostring(win) .. "." .. tostring(pane) end
+
     local escaped_command = command:gsub("'", "'\\''")
     local send_command
-    if pane == 0 then
-        send_command =command
-        vim.cmd(send_command)
+
+    if pane == 0 and not win then
+        vim.cmd(command)
     else
-        send_command = "tmux send-keys -t " .. pane .. " '" .. escaped_command .. "' C-m"
+        send_command = "tmux send-keys -t " .. target .. " '" .. escaped_command .. "' C-m"
         vim.fn.system(send_command)
     end
 end
