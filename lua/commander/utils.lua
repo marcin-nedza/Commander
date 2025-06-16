@@ -1,14 +1,6 @@
 local files = require("commander.file")
 local M = {}
 
----Set options
----@param opt table
-function M.set_options(opt)
-    M.table={
-        options=opt
-    }
-end
-
 function M.initDirectories(dir)
     if vim.fn.isdirectory(dir) == 0 then
         vim.fn.mkdir(dir, "p")
@@ -29,7 +21,7 @@ function M.initCommandFile(dir, fileName)
     if file then
         file:close()
     else
-        print("Failed to initialize file: " .. path)
+        print("[Commander]: Failed to initialize file: " .. path)
     end
 end
 
@@ -61,17 +53,23 @@ function M.initKeybindings()
         local command = entry.command
         local keybind = entry.keybind
         local pane
+        local window
         if not entry.pane then
             pane = 0
         else
             pane = entry.pane
         end
+        if not entry.win then
+            window = 0
+        else
+            window = entry.win
+        end
 
-        local leader_key=M.table.options.leader_key
+        local leader_key=files.table.options.leader_key
         local keybind_leader = leader_key .. keybind
 
         vim.keymap.set("n", keybind_leader, function()
-            files.send_tmux_command(pane, command)
+            files.send_tmux_command(pane, command,window)
         end, {
             noremap = true,
             silent = true,
