@@ -60,11 +60,13 @@ The format supports **project-specific** commands. Here's an example:
   "/home/user/location1": [
     {
       "pane": 1,
+      "win":0,
       "keybind": "b",
       "command": "gcc main.c -o main"
     },
     {
       "pane": 2,
+      "win":1,
       "keybind": "r",
       "command": "./main"
     }
@@ -72,6 +74,7 @@ The format supports **project-specific** commands. Here's an example:
   "/home/user/location2": [
     {
       "pane": 2,
+      "win":"somename",
       "keybind": "s",
       "command": "npm start"
     }
@@ -79,6 +82,7 @@ The format supports **project-specific** commands. Here's an example:
 }
 ````
 - `pane`: Target tmux pane number.
+- `win`: Target tmux window number or name.
 - `keybind`: The Neovim key (single character) to trigger the command (prefixed with your chosen leader key).
 - `command`: The shell command to send.
 
